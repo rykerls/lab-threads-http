@@ -22,6 +22,7 @@ public class MovieDownloader {
 
 		//construct the url for the omdbapi API
 		String urlString = "";
+      // Attempts to URL encode user input into OMDB api, catches and returns if an exception is thrown by URLEncoder.encode.
 		try {
 			urlString = "http://www.omdbapi.com/?s=" + URLEncoder.encode(movie, "UTF-8") + "&type=movie";
 		}catch(UnsupportedEncodingException uee){
@@ -34,43 +35,56 @@ public class MovieDownloader {
 		String[] movies = null;
 
 		try {
-
+         
+         // Make the URL string an Object, because Java
 			URL url = new URL(urlString);
-
+         
+         // Opens a TCP connection to URL and connects in "GET" mode
 			urlConnection = (HttpURLConnection) url.openConnection();
 			urlConnection.setRequestMethod("GET");
 			urlConnection.connect();
-
+         
+         // Get reference to incoming data stream from active URLConnection
 			InputStream inputStream = urlConnection.getInputStream();
 			StringBuffer buffer = new StringBuffer();
-			if (inputStream == null) {
+			
+         // Connection may have been closed.
+         // Either way, we aren't getting data
+         // So we return nothing
+         if (inputStream == null) {
 				return null;
 			}
+         // Pipe the incoming byte stream to BufferedReader, which allows 
+         // us to break the data up in a variety of ways.
+         // (we're reading it line by line)
 			reader = new BufferedReader(new InputStreamReader(inputStream));
-
 			String line = reader.readLine();
 			while (line != null) {
 				buffer.append(line + "\n");
 				line = reader.readLine();
 			}
-
+         // The InputStream remained open, but didn't return any data
 			if (buffer.length() == 0) {
 				return null;
 			}
+         
+         // Format query results
 			String results = buffer.toString();
 			results = results.replace("{\"Search\":[","");
 			results = results.replace("]}","");
 			results = results.replace("},", "},\n");
-
+         
 			movies = results.split("\n");
 		} 
 		catch (IOException e) {
 			return null;
 		} 
 		finally {
+         // Close connection to URL
 			if (urlConnection != null) {
 				urlConnection.disconnect();
 			}
+         // Close character stream after InputStream has been closed 
 			if (reader != null) {
 				try {
 					reader.close();
@@ -79,7 +93,7 @@ public class MovieDownloader {
 				}
 			}
 		}
-
+      // Return array of movies from OMDB response
 		return movies;
 	}
 
